@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import srtParser2 from "srt-parser-2";
 import { stripHtml } from "string-strip-html";
-import { translateSync } from './translate.mjs';
+import { getReferenceTable, translateSync } from './translate.mjs';
 
 const OUT_FOLDER = './out'
 
@@ -10,8 +10,15 @@ const process = async () => {
     var parser = new srtParser2();
     var srt_array = parser.fromSrt(subtitle);
 
-    for (let srt of srt_array) {
-        srt.text = await translateSync("Darker than Black", stripHtml(srt.text).result)
+    const guide = await getReferenceTable("Darker than Black")
+    for (let i = 0; i < srt_array.length; i++) {
+        const previousSrt = i > 0 ? srt_array[i - 1] : undefined
+        const srt = srt_array[i]
+        srt.text = await translateSync({
+            name: "Darker than Black",
+            guide,
+            previous: previousSrt ? stripHtml(previousSrt.text).result : undefined
+        }, stripHtml(srt.text).result)
     }
 
     var srt_string = parser.toSrt(srt_array);
